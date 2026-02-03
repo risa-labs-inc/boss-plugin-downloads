@@ -14,8 +14,8 @@ import androidx.compose.material.icons.outlined.Download
  * Displays active and completed downloads in a compact sidebar format.
  */
 object DownloadsInfo : PanelInfo {
-    override val id = PanelId("dynamic-downloads", 17)
-    override val displayName = "Downloads (Dynamic)"
+    override val id = PanelId("downloads", 2)
+    override val displayName = "Downloads"
     override val icon = Icons.Outlined.Download
     override val defaultSlotPosition = left.top.bottom
 }
