@@ -12,7 +12,7 @@ import ai.rever.boss.plugin.api.PluginContext
 class DownloadsDynamicPlugin : DynamicPlugin {
     override val pluginId = "ai.rever.boss.plugin.dynamic.downloads"
     override val displayName = "Downloads (Dynamic)"
-    override val version = "1.0.0"
+    override val version = "1.0.4"
     override val description = "Displays active and completed downloads in a sidebar panel"
     override val author = "Risa Labs"
     override val url = "https://github.com/risa-labs-inc/boss-plugin-downloads"
