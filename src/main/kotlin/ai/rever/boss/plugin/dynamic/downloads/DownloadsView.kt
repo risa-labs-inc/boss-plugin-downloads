@@ -31,7 +31,11 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun DownloadsView(viewModel: DownloadsViewModel) {
-    val downloads by viewModel.downloads.collectAsState()
+    // Most recent first (by startTime). Sorting here rather than in the ViewModel
+    // keeps the StateFlow contract unchanged while giving the panel a consistent
+    // newest-on-top order across active and completed entries.
+    val downloads = viewModel.downloads.collectAsState().value
+        .sortedByDescending { it.startTime }
     val listState = rememberLazyListState()
 
     Column(
