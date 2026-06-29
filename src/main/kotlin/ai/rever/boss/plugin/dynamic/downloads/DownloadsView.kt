@@ -4,9 +4,7 @@ import ai.rever.boss.plugin.api.DownloadItemData
 import ai.rever.boss.plugin.api.DownloadStatusData
 import ai.rever.boss.plugin.scrollbar.getPanelScrollbarConfig
 import ai.rever.boss.plugin.scrollbar.lazyListScrollbar
-import ai.rever.boss.plugin.ui.BossDarkBackground
-import ai.rever.boss.plugin.ui.BossDarkBorder
-import ai.rever.boss.plugin.ui.BossDarkTextSecondary
+import ai.rever.boss.plugin.ui.BossThemeColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
@@ -41,7 +39,7 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BossDarkBackground)
+            .background(BossThemeColors.BackgroundColor)
             .padding(8.dp)
     ) {
         // Header
@@ -54,7 +52,7 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
         ) {
             Text(
                 text = "Downloads",
-                color = Color.White,
+                color = BossThemeColors.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -65,10 +63,11 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
             }
             if (activeCount > 0) {
                 Surface(
-                    color = Color(0xFF4CAF50),
+                    color = BossThemeColors.SuccessColor,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
+                        // White-on-colored-badge: intentionally fixed for contrast over the success fill.
                         text = "$activeCount",
                         color = Color.White,
                         fontSize = 10.sp,
@@ -78,7 +77,7 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
             }
         }
 
-        Divider(color = BossDarkBorder, thickness = 1.dp)
+        Divider(color = BossThemeColors.BorderColor, thickness = 1.dp)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -96,13 +95,13 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
                     Icon(
                         imageVector = Icons.Default.Download,
                         contentDescription = "No downloads",
-                        tint = BossDarkTextSecondary,
+                        tint = BossThemeColors.TextSecondary,
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "No downloads",
-                        color = BossDarkTextSecondary,
+                        color = BossThemeColors.TextSecondary,
                         fontSize = 12.sp
                     )
                 }
@@ -154,7 +153,7 @@ private fun DownloadItem(
             title = {
                 Text(
                     text = "Delete File?",
-                    color = Color.White,
+                    color = BossThemeColors.TextPrimary,
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -162,19 +161,19 @@ private fun DownloadItem(
                 Column {
                     Text(
                         text = "Are you sure you want to delete this file?",
-                        color = Color.White
+                        color = BossThemeColors.TextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = download.fileName,
-                        color = Color(0xFF90CAF9),
+                        color = BossThemeColors.AccentColor,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "This action cannot be undone.",
-                        color = Color(0xFFF44336),
+                        color = BossThemeColors.ErrorColor,
                         fontSize = 11.sp,
                         fontStyle = FontStyle.Italic
                     )
@@ -187,24 +186,24 @@ private fun DownloadItem(
                         onRemove()
                     }
                 ) {
-                    Text("Delete", color = Color(0xFFF44336))
+                    Text("Delete", color = BossThemeColors.ErrorColor)
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteConfirmation = false }
                 ) {
-                    Text("Cancel", color = Color(0xFF90CAF9))
+                    Text("Cancel", color = BossThemeColors.AccentColor)
                 }
             },
-            backgroundColor = Color(0xFF2D2D2D),
-            contentColor = Color.White
+            backgroundColor = BossThemeColors.SurfaceColor,
+            contentColor = BossThemeColors.TextPrimary
         )
     }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF2D2D2D),
+        color = BossThemeColors.SurfaceColor,
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(
@@ -227,11 +226,11 @@ private fun DownloadItem(
                     },
                     contentDescription = download.status.name,
                     tint = when (download.status) {
-                        DownloadStatusData.COMPLETED -> Color(0xFF4CAF50)
-                        DownloadStatusData.FAILED -> Color(0xFFF44336)
-                        DownloadStatusData.DOWNLOADING -> Color(0xFF2196F3)
-                        DownloadStatusData.PAUSED -> Color(0xFFFF9800)
-                        else -> Color.Gray
+                        DownloadStatusData.COMPLETED -> BossThemeColors.SuccessColor
+                        DownloadStatusData.FAILED -> BossThemeColors.ErrorColor
+                        DownloadStatusData.DOWNLOADING -> BossThemeColors.AccentColor
+                        DownloadStatusData.PAUSED -> BossThemeColors.WarningColor
+                        else -> BossThemeColors.TextSecondary
                     },
                     modifier = Modifier.size(16.dp)
                 )
@@ -240,7 +239,7 @@ private fun DownloadItem(
 
                 Text(
                     text = download.fileName,
-                    color = Color.White,
+                    color = BossThemeColors.TextPrimary,
                     fontSize = 11.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -263,8 +262,8 @@ private fun DownloadItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp),
-                    color = if (download.status == DownloadStatusData.PAUSED) Color(0xFFFF9800) else Color(0xFF2196F3),
-                    backgroundColor = Color(0xFF424242)
+                    color = if (download.status == DownloadStatusData.PAUSED) BossThemeColors.WarningColor else BossThemeColors.AccentColor,
+                    backgroundColor = BossThemeColors.BorderColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
@@ -272,7 +271,7 @@ private fun DownloadItem(
             // Status text
             Text(
                 text = buildStatusText(download),
-                color = BossDarkTextSecondary,
+                color = BossThemeColors.TextSecondary,
                 fontSize = 9.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -294,7 +293,7 @@ private fun DownloadItem(
                                 Icon(
                                     imageVector = Icons.Default.Pause,
                                     contentDescription = "Pause",
-                                    tint = Color(0xFFFF9800),
+                                    tint = BossThemeColors.WarningColor,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -306,7 +305,7 @@ private fun DownloadItem(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Cancel",
-                                tint = Color(0xFFF44336),
+                                tint = BossThemeColors.ErrorColor,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -326,7 +325,7 @@ private fun DownloadItem(
                                 Icon(
                                     imageVector = Icons.Default.PlayArrow,
                                     contentDescription = "Resume",
-                                    tint = Color(0xFF4CAF50),
+                                    tint = BossThemeColors.SuccessColor,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -338,7 +337,7 @@ private fun DownloadItem(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete",
-                                tint = Color(0xFFF44336),
+                                tint = BossThemeColors.ErrorColor,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -357,7 +356,7 @@ private fun DownloadItem(
                             Icon(
                                 imageVector = Icons.Default.Folder,
                                 contentDescription = "Show in Folder",
-                                tint = Color(0xFF90CAF9),
+                                tint = BossThemeColors.AccentColor,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -368,7 +367,7 @@ private fun DownloadItem(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Default.OpenInNew,
                                 contentDescription = "Open",
-                                tint = Color(0xFF90CAF9),
+                                tint = BossThemeColors.AccentColor,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -379,7 +378,7 @@ private fun DownloadItem(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete File",
-                                tint = Color(0xFFF44336),
+                                tint = BossThemeColors.ErrorColor,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
