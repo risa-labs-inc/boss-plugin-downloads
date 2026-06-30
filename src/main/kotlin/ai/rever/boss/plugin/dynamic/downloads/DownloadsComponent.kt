@@ -3,6 +3,7 @@ package ai.rever.boss.plugin.dynamic.downloads
 import ai.rever.boss.plugin.api.DownloadDataProvider
 import ai.rever.boss.plugin.api.PanelComponentWithUI
 import ai.rever.boss.plugin.api.PanelInfo
+import ai.rever.boss.plugin.ui.BossTheme
 import androidx.compose.runtime.Composable
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
@@ -28,6 +29,8 @@ class DownloadsComponent(
 
     @Composable
     override fun Content() {
-        DownloadsView(viewModel = viewModel)
+        BossTheme {
+            DownloadsView(viewModel = viewModel)
+        }
     }
 }
