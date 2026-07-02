@@ -31,5 +31,7 @@ class DownloadsDynamicPlugin : DynamicPlugin {
                 dataProvider = dataProvider
             )
         }
+        // Contribute downloads_* MCP tools; auto-removed on disable/unload.
+        context.registerMcpToolProvider(DownloadsMcpToolProvider(pluginId, dataProvider))
     }
 }
