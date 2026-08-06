@@ -1,5 +1,6 @@
 package ai.rever.boss.plugin.dynamic.downloads
 
+import ai.rever.boss.plugin.ui.BossAlertDialog
 import ai.rever.boss.plugin.api.DownloadItemData
 import ai.rever.boss.plugin.api.DownloadStatusData
 import ai.rever.boss.plugin.scrollbar.getPanelScrollbarConfig
@@ -148,7 +149,7 @@ private fun DownloadItem(
 
     // Delete confirmation dialog
     if (showDeleteConfirmation) {
-        AlertDialog(
+        BossAlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = {
                 Text(
