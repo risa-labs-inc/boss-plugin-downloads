@@ -36,6 +36,8 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
     val downloads = viewModel.downloads.collectAsState().value
         .sortedByDescending { it.startTime }
     val listState = rememberLazyListState()
+    val busy by viewModel.busy.collectAsState()
+    val failures by viewModel.failures.collectAsState()
 
     Column(
         modifier = Modifier
@@ -83,7 +85,7 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
         Spacer(modifier = Modifier.height(8.dp))
 
         // Downloads list
-        if (downloads.isEmpty()) {
+        if (downloads.isEmpty() && failures.isEmpty()) {
             // Empty state
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -119,9 +121,24 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
                     ),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                items(failures.values.toList(), key = { "failure:${it.id}" }) { failure ->
+                    Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Text(failure.message, color = BossThemeColors.ErrorColor, fontSize = 12.sp)
+                        Row {
+                            TextButton(onClick = { viewModel.retry(failure) }, enabled = failure.id !in busy) {
+                                Text("Retry", color = BossThemeColors.AccentColor)
+                            }
+                            TextButton(onClick = { viewModel.dismissFailure(failure.id) }) {
+                                Text("Dismiss", color = BossThemeColors.TextSecondary)
+                            }
+                        }
+                    }
+                }
+
                 items(downloads, key = { it.id }) { download ->
                     DownloadItem(
                         download = download,
+                        busy = download.id in busy,
                         onPause = { viewModel.pauseDownload(download.id) },
                         onResume = { viewModel.resumeDownload(download.id) },
                         onCancel = { viewModel.cancelDownload(download.id) },
@@ -138,6 +155,7 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
 @Composable
 private fun DownloadItem(
     download: DownloadItemData,
+    busy: Boolean,
     onPause: () -> Unit,
     onResume: () -> Unit,
     onCancel: () -> Unit,
@@ -288,6 +306,7 @@ private fun DownloadItem(
                     ) {
                         if (download.canPause) {
                             IconButton(
+                            enabled = !busy,
                                 onClick = onPause,
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -300,6 +319,7 @@ private fun DownloadItem(
                             }
                         }
                         IconButton(
+                            enabled = !busy,
                             onClick = onCancel,
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -320,6 +340,7 @@ private fun DownloadItem(
                     ) {
                         if (download.canResume) {
                             IconButton(
+                            enabled = !busy,
                                 onClick = onResume,
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -332,6 +353,7 @@ private fun DownloadItem(
                             }
                         }
                         IconButton(
+                            enabled = !busy,
                             onClick = onRemove,
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -351,6 +373,7 @@ private fun DownloadItem(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         IconButton(
+                            enabled = !busy,
                             onClick = onRevealInFolder,
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -362,6 +385,7 @@ private fun DownloadItem(
                             )
                         }
                         IconButton(
+                            enabled = !busy,
                             onClick = onOpenFile,
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -373,6 +397,7 @@ private fun DownloadItem(
                             )
                         }
                         IconButton(
+                            enabled = !busy,
                             onClick = { showDeleteConfirmation = true },
                             modifier = Modifier.size(28.dp)
                         ) {

@@ -40,6 +40,12 @@ dependencies {
         compileOnly(files("build/downloaded-deps/boss-plugin-api.jar"))
     }
     
+    testImplementation(kotlin("test-junit"))
+    testImplementation(compose.desktop.uiTestJUnit4)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation(files(if (useLocalDependencies) "$bossPluginApiPath/build/libs/boss-plugin-api-1.0.73.jar" else "build/downloaded-deps/boss-plugin-api.jar"))
+
     // Compose dependencies
     implementation(compose.desktop.currentOs)
     implementation(compose.runtime)
