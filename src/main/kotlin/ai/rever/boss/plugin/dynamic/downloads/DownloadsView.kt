@@ -29,13 +29,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun DownloadsView(viewModel: DownloadsViewModel) {
+fun DownloadsView(viewModel: DownloadsViewModel, showTitle: Boolean = false) {
     // Most recent first (by startTime). Sorting here rather than in the ViewModel
     // keeps the StateFlow contract unchanged while giving the panel a consistent
     // newest-on-top order across active and completed entries.
     val downloads = viewModel.downloads.collectAsState().value
         .sortedByDescending { it.startTime }
     val listState = rememberLazyListState()
+    val activeCount = downloads.count {
+        it.status == DownloadStatusData.DOWNLOADING ||
+            it.status == DownloadStatusData.QUEUED
+    }
 
     Column(
         modifier = Modifier
@@ -43,44 +47,43 @@ fun DownloadsView(viewModel: DownloadsViewModel) {
             .background(BossThemeColors.BackgroundColor)
             .padding(8.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Downloads",
-                color = BossThemeColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            val activeCount = downloads.count {
-                it.status == DownloadStatusData.DOWNLOADING ||
-                it.status == DownloadStatusData.QUEUED
-            }
-            if (activeCount > 0) {
-                Surface(
-                    color = BossThemeColors.SuccessColor,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
+        // The host already labels the sidebar; only tabs need an in-content title.
+        if (showTitle || activeCount > 0) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (showTitle) Arrangement.SpaceBetween else Arrangement.End
+            ) {
+                if (showTitle) {
                     Text(
-                        // White-on-colored-badge: intentionally fixed for contrast over the success fill.
-                        text = "$activeCount",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        text = "Downloads",
+                        color = BossThemeColors.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
+                if (activeCount > 0) {
+                    Surface(
+                        color = BossThemeColors.SuccessColor,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            // White-on-colored-badge: intentionally fixed for contrast over the success fill.
+                            text = "$activeCount",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
+
+            Divider(color = BossThemeColors.BorderColor, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
-
-        Divider(color = BossThemeColors.BorderColor, thickness = 1.dp)
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         // Downloads list
         if (downloads.isEmpty()) {
@@ -251,13 +254,10 @@ private fun DownloadItem(
             Spacer(modifier = Modifier.height(6.dp))
 
             // Progress bar for active and paused downloads
-            val totalBytes = download.totalBytes
+            val totalBytes = download.totalBytes?.takeIf { it > 0 }
             if ((download.status == DownloadStatusData.DOWNLOADING || download.status == DownloadStatusData.PAUSED) && totalBytes != null) {
-                val progress = if (totalBytes > 0) {
-                    download.receivedBytes.toFloat() / totalBytes.toFloat()
-                } else {
-                    0f
-                }
+                val progress = (download.receivedBytes.toDouble() / totalBytes.toDouble())
+                    .toFloat().coerceIn(0f, 1f)
                 LinearProgressIndicator(
                     progress = progress,
                     modifier = Modifier
@@ -274,7 +274,7 @@ private fun DownloadItem(
                 text = buildStatusText(download),
                 color = BossThemeColors.TextSecondary,
                 fontSize = 9.sp,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -393,39 +393,39 @@ private fun DownloadItem(
     }
 }
 
-private fun buildStatusText(download: DownloadItemData): String {
+internal fun buildStatusText(download: DownloadItemData): String {
     return when (download.status) {
         DownloadStatusData.DOWNLOADING -> {
-            val received = formatBytes(download.receivedBytes)
-            val total = download.totalBytes?.let { formatBytes(it) } ?: "?"
             val speed = formatSpeed(download.speed)
-            "$received/$total • $speed"
+            "${buildSizeText(download)} • $speed"
         }
         DownloadStatusData.COMPLETED -> {
-            val size = download.totalBytes ?: download.receivedBytes
-            formatBytes(size)
+            buildSizeText(download)
         }
         DownloadStatusData.FAILED -> download.errorReason ?: "Failed"
         DownloadStatusData.CANCELLED -> "Cancelled"
-        DownloadStatusData.PAUSED -> "Paused"
-        DownloadStatusData.QUEUED -> "Queued..."
+        DownloadStatusData.PAUSED -> "Paused • ${buildSizeText(download)}"
+        DownloadStatusData.QUEUED -> "Queued • ${buildSizeText(download)}"
     }
 }
 
-private fun formatBytes(bytes: Long): String {
+internal fun formatBytes(bytes: Long): String {
     return when {
-        bytes >= 1_073_741_824 -> String.format("%.1f GB", bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> String.format("%.1f MB", bytes / 1_048_576.0)
-        bytes >= 1024 -> String.format("%.1f KB", bytes / 1024.0)
+        bytes < 0 -> "Unknown size"
+        bytes >= 1_000_000_000_000 -> String.format("%.1f TB", bytes / 1_000_000_000_000.0)
+        bytes >= 1_000_000_000 -> String.format("%.1f GB", bytes / 1_000_000_000.0)
+        bytes >= 1_000_000 -> String.format("%.1f MB", bytes / 1_000_000.0)
+        bytes >= 1000 -> String.format("%.1f KB", bytes / 1000.0)
         else -> "$bytes B"
     }
 }
 
 private fun formatSpeed(bytesPerSecond: Double): String {
     return when {
-        bytesPerSecond >= 1_073_741_824 -> String.format("%.1f GB/s", bytesPerSecond / 1_073_741_824.0)
-        bytesPerSecond >= 1_048_576 -> String.format("%.1f MB/s", bytesPerSecond / 1_048_576.0)
-        bytesPerSecond >= 1024 -> String.format("%.1f KB/s", bytesPerSecond / 1024.0)
+        !bytesPerSecond.isFinite() || bytesPerSecond < 0 -> "0 B/s"
+        bytesPerSecond >= 1_000_000_000 -> String.format("%.1f GB/s", bytesPerSecond / 1_000_000_000.0)
+        bytesPerSecond >= 1_000_000 -> String.format("%.1f MB/s", bytesPerSecond / 1_000_000.0)
+        bytesPerSecond >= 1000 -> String.format("%.1f KB/s", bytesPerSecond / 1000.0)
         else -> String.format("%.0f B/s", bytesPerSecond)
     }
 }

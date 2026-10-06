@@ -28,7 +28,8 @@ class DownloadsDynamicPlugin : DynamicPlugin {
             DownloadsComponent(
                 ctx = ctx,
                 panelInfo = panelInfo,
-                dataProvider = dataProvider
+                dataProvider = dataProvider,
+                activeTabsProvider = context.activeTabsProvider
             )
         }
         // Contribute downloads_* MCP tools; auto-removed on disable/unload.
