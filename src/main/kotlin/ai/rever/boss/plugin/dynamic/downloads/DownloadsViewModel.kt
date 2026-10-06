@@ -7,6 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -18,6 +22,9 @@ class DownloadsViewModel(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     val downloads: StateFlow<List<DownloadItemData>> = dataProvider.downloads
+        .map { items -> items.map(::withCompletedFileSize) }
+        .flowOn(Dispatchers.IO)
+        .stateIn(scope, SharingStarted.Eagerly, dataProvider.downloads.value)
 
     fun pauseDownload(id: String) {
         scope.launch {

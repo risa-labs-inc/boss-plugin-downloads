@@ -6,6 +6,8 @@ import ai.rever.boss.plugin.api.McpToolDefinition
 import ai.rever.boss.plugin.api.McpToolHandler
 import ai.rever.boss.plugin.api.McpToolProvider
 import ai.rever.boss.plugin.api.McpToolResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * MCP tools contributed by the Downloads plugin: list downloads and
@@ -24,7 +26,9 @@ internal class DownloadsMcpToolProvider(
             handler = McpToolHandler {
                 val items = downloads.downloads.value
                 if (items.isEmpty()) McpToolResult("No downloads.")
-                else McpToolResult(items.joinToString("\n") { format(it) })
+                else withContext(Dispatchers.IO) {
+                    McpToolResult(items.joinToString("\n") { format(it) })
+                }
             },
         ),
         McpToolDefinition(
@@ -88,9 +92,12 @@ internal class DownloadsMcpToolProvider(
     }
 
     private fun format(d: DownloadItemData): String {
-        val pct = d.totalBytes?.takeIf { it > 0 }?.let { " ${(d.receivedBytes * 100 / it)}%" } ?: ""
+        val item = withCompletedFileSize(d)
+        val pct = item.totalBytes?.takeIf { it > 0 }?.let {
+            " ${(item.receivedBytes.toDouble() / it * 100).coerceIn(0.0, 100.0).toInt()}%"
+        } ?: ""
         val err = d.errorReason?.let { " error=$it" } ?: ""
-        return "${d.id}  ${d.status}$pct  ${d.fileName}$err"
+        return "${d.id}  ${d.status}$pct  ${d.fileName}  ${buildSizeText(item)}$err"
     }
 
     private fun idSchema(desc: String): String =
