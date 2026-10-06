@@ -89,4 +89,76 @@ class DownloadSizesTest {
         assertEquals(String.format("%.1f TB", 1.0), formatBytes(1_000_000_000_000))
         assertEquals("Unknown size", formatBytes(-1))
     }
+
+    @Test
+    fun progressTicksReadCompletedFilesOnlyOnceAndKeepLiveMetadata() {
+        var reads = 0
+        val cache = CompletedDownloadSizeCache { reads++; 4321L }
+        val completed = download(path = "/downloads/completed.bin")
+        val active = download(status = DownloadStatusData.DOWNLOADING, path = "/downloads/active.bin")
+        repeat(20) { tick ->
+            val currentCompleted = completed.copy(fileName = "renamed-$tick.bin")
+            val currentActive = active.copy(receivedBytes = tick.toLong())
+            val result = cache.enrich(listOf(currentCompleted, currentActive))
+            assertEquals(currentCompleted.copy(receivedBytes = 4321, totalBytes = 4321), result[0])
+            assertEquals(currentActive, result[1])
+        }
+        assertEquals(1, reads)
+    }
+
+    @Test
+    fun unavailableFilesAreCachedWithoutFreezingReportedCounts() {
+        var reads = 0
+        val cache = CompletedDownloadSizeCache { reads++; null }
+        val completed = download(path = "/downloads/missing.bin")
+        assertEquals(listOf(completed), cache.enrich(listOf(completed)))
+        val updated = completed.copy(receivedBytes = 6000, totalBytes = 6000)
+        assertEquals(listOf(updated), cache.enrich(listOf(updated)))
+        assertEquals(1, reads)
+    }
+
+    @Test
+    fun changedDownloadIdentityOrDestinationInvalidatesSize() {
+        val original = download(path = "/downloads/original.bin")
+        for (changed in listOf(
+            original.copy(id = "new-id"),
+            original.copy(destinationPath = "/downloads/new.bin"),
+            original.copy(startTime = 1),
+            original.copy(endTime = 1),
+        )) {
+            var reads = 0
+            val cache = CompletedDownloadSizeCache { ++reads * 1000L }
+            assertEquals(1000L, cache.enrich(listOf(original)).single().receivedBytes)
+            assertEquals(2000L, cache.enrich(listOf(changed)).single().receivedBytes)
+            assertEquals(2000L, cache.enrich(listOf(changed)).single().receivedBytes)
+            assertEquals(2, reads)
+        }
+    }
+
+    @Test
+    fun removedOrRestartedDownloadsAreReadAgainOnCompletion() {
+        val completed = download(path = "/downloads/completed.bin")
+        for (intermediate in listOf(emptyList(), listOf(completed.copy(status = DownloadStatusData.DOWNLOADING)))) {
+            var reads = 0
+            val cache = CompletedDownloadSizeCache { ++reads * 1000L }
+            assertEquals(1000L, cache.enrich(listOf(completed)).single().receivedBytes)
+            assertEquals(intermediate, cache.enrich(intermediate))
+            assertEquals(2000L, cache.enrich(listOf(completed)).single().receivedBytes)
+            assertEquals(2, reads)
+        }
+    }
+
+    @Test
+    fun emptyFilesAreCachedAndBlankDestinationsSkipLookups() {
+        var reads = 0
+        val cache = CompletedDownloadSizeCache { reads++; 0L }
+        val completed = download(path = "/downloads/empty.bin")
+        repeat(2) {
+            assertEquals("0 B", buildStatusText(cache.enrich(listOf(completed)).single()))
+        }
+        assertEquals(1, reads)
+        val noPath = download()
+        assertEquals(listOf(noPath), cache.enrich(listOf(noPath)))
+        assertEquals(1, reads)
+    }
 }

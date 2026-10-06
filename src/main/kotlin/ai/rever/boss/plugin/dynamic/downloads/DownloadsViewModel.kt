@@ -21,8 +21,10 @@ class DownloadsViewModel(
 ) {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    private val completedSizes = CompletedDownloadSizeCache()
+
     val downloads: StateFlow<List<DownloadItemData>> = dataProvider.downloads
-        .map { items -> items.map(::withCompletedFileSize) }
+        .map { items -> completedSizes.enrich(items) }
         .flowOn(Dispatchers.IO)
         .stateIn(scope, SharingStarted.Eagerly, dataProvider.downloads.value)
 
